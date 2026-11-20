@@ -1,0 +1,19 @@
+{
+  "kind": "constructed",
+  "source": "Example tied crisis snapshot based on the rule in Rehm v2 Appendix I.1",
+  "policy": "deferred_tenure",
+  "snapshot": {
+    "stock": 28,
+    "capacity": 56,
+    "poverty_line": 7,
+    "treasury": 0,
+    "agents": [
+      {"name": "A", "tenure": 4},
+      {"name": "B", "tenure": 4},
+      {"name": "C", "tenure": 4},
+      {"name": "D", "tenure": 4},
+      {"name": "E", "tenure": 4}
+    ]
+  },
+  "observed_removed": ["A"]
+}

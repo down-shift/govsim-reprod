@@ -1,0 +1,165 @@
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai2027}
+\usepackage[hyphens]{url}
+\usepackage{graphicx}
+\urlstyle{rm}
+\def\UrlFont{\rm}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\frenchspacing
+\pdfinfo{/TemplateVersion (2027.1)}
+\setcounter{secnumdepth}{0}
+\title{Roster Order Can Decide Who Agent-Written Rules Remove}
+\author{Anonymous Submission}
+\affiliations{}
+\begin{document}
+\maketitle
+\begin{abstract}
+We audit two enacted Sonnet 4.5 rules from GovSim-SelfGovern by comparing the original preview with roster reordering at the preview state and at a state that triggers removal. Reordering at preview time detects roster dependence for one rule. The other reveals it only after activation. When all five members have equal tenure, each rule changes who is removed in 96 of 120 roster orders while keeping the removal count fixed. A constructed stock trace triggers both rules after all five members meet subsistence in every preceding round. All 32 alternative final harvest profiles tested show the same roster dependence. Pooling outcomes across roster orders makes these deterministic rules look like uniform lotteries, so the audit compares outcomes at a fixed roster.
+\end{abstract}
+
+\section{A preview can miss two different things}
+A one-state preview of a persistent agent-written rule can miss behavior that appears only after the environment changes. Even when a removal is visible, the preview may not reveal whether the choice of member depends on an incidental representation. In a scarcity crisis, agents may vote on a rule that can remove members before the preview shows who would lose their place. If the rule leaves tie-breaking unspecified, voters may approve it without knowing that roster order decides who is removed when tenures tie.
+
+For example, apply the deferred rule below to five active members with equal tenure, stock 28, capacity 56, and poverty line 7. The population limit is four. With roster ABCDE the rule removes A; swapping the first two whole member records gives roster BACDE, and the rule removes B. All attributes remain attached to their identities. The stable tenure sort preserves list order on ties; the removal count is one in both cases.
+
+GovSim-SelfGovern lets agents submit executable Python rules and vote after seeing a summary and dry-run effects \citep{rehm2026}. Accepted rules persist and re-execute in later rounds. A preview on one snapshot reveals what the rule does there. It can miss a removal branch that has yet to activate, and even when a preview names a victim, it cannot show whether an incidental input determines that name. We propose an audit before accepting a persistent update: select an activating state, preserve policy-relevant inputs, and vary the roster representation. This applies metamorphic testing \citep{chen2018} to a narrow source of implementation sensitivity in social simulation \citep{ye2026}.
+
+\section{Two published rules}
+We transcribed two rules that Rehm documents as enacted in separate Sonnet 4.5 runs of the same system, using the arXiv v2 listings. These two cases come from one system and model; they do not estimate prevalence. The deferred rule, \textnormal{survival\_population\_limit}, passed 3--2 in G3 Thinking, seed 1024, round 3. The dry run had no effects. Rehm reports one removal in the next round (Appendix I.1). The rule sorts active agents by increasing tenure and removes the shortest-tenured prefix. Its description gives no tie policy.
+
+The named rule, \textnormal{emergency\_population\_cap}, passed 3--2 in G3 Baseline, seed 123, round 5. Its dry run named four removals (Appendix D.5). Rehm already notes that its description promises a lottery while the implementation sorts by tenure. It sorts in the same direction as the deferred rule but keeps the prefix. Rehm also studied the effect of deferred previews on votes. We examine identity-level roster counterfactuals under each printed rule, including a triggering stock-model witness. We do not measure voting or claim the delay or lottery mismatch was first identified here.
+
+\section{Audited decision logic}
+Figure~\ref{lst:rules} shows the complete executable statements of each published function, with comments and docstrings omitted. In both, the population limit is at least one. The deferred limit uses \emph{capacity}, not stock. The named limit uses stock minus one quarter of capacity. At capacity $C=56$, poverty line $p=7$, and stock $s\in[4,14]$, the respective limits are four and one. The population limit alone does not remove anyone: the respective stock guard must also be true.
+
+\begin{figure*}[t]
+\footnotesize
+\begin{verbatim}
+def survival_population_limit(world):
+    if world.stock < 0.6 * world.capacity:
+        sustainable_catch = world.capacity * 0.5
+        max_sustainable = max(
+            1, int(sustainable_catch /
+                   world.poverty_line))
+        active_agents = [
+            a for a in world.agents if a.active]
+        if len(active_agents) > max_sustainable:
+            active_agents.sort(
+                key=lambda a: a.rounds_active)
+            excess = (len(active_agents)
+                      - max_sustainable)
+            for i in range(excess):
+                active_agents[i].active = False
+    return world
+
+def emergency_population_cap(world):
+    sustainable_threshold = world.capacity / 2
+    if world.stock < sustainable_threshold:
+        available_for_catch = max(
+            0, world.stock
+            - sustainable_threshold * 0.5)
+        sustainable_agents = max(
+            1, int(available_for_catch /
+                   world.poverty_line))
+        active_agents = [
+            a for a in world.agents if a.active]
+        if len(active_agents) > sustainable_agents:
+            active_agents.sort(
+                key=lambda a: a.rounds_active)
+            for i, agent in enumerate(active_agents):
+                if i >= sustainable_agents:
+                    agent.active = False
+    return world
+\end{verbatim}
+\caption{Executable statements from Rehm v2, Appendices I.1 and D.5, with formatting normalized and comments and docstrings omitted. The source describes the named rule as a lottery; its body has no random draw.}
+\label{lst:rules}
+\end{figure*}
+
+\section{Three checks on the same rule}
+We first execute a rule on the original roster at the preview state. We then repeat on all $5!=120$ orders at that state. Finally, we repeat at an activating state. Each permutation moves whole agent records. We compare the distribution over sets of removed identities, conditional on each order. Deterministic rules have a point distribution. The lottery controls use a uniform distribution over the appropriate subsets of all eligible members and are computed exactly. These controls distinguish randomness from roster dependence, but do not implement the named rule's particular promised eligibility criteria.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Case & Removes? & Preview & Trigger \\
+\midrule
+Deferred, all tied & No & 0 & 96 \\
+Deferred, cutoff pair & No & 0 & 60 \\
+Deferred, unique cutoff & No & 0 & 0 \\
+Named, all tied & Yes & 96 & 96 \\
+Named, cutoff pair & Yes & 60 & 60 \\
+Named, unique cutoff & Yes & 0 & 0 \\
+Explicit list index & Yes & 108 & 108 \\
+Explicit name priority & Yes & 0 & 0 \\
+Uniform lotteries & Yes & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Removes? refers to the original-order preview. The last two columns count orders out of 120 whose outcome distribution differs from the original at the same state. Both constructed lottery controls are invariant in distribution.}
+\label{tab:checks}
+\end{table}
+
+All five members start active in the fixed fixtures. The deferred rule uses preview stock 40 and trigger stock 28. The named rule uses stock 21 for both, so removal is already visible at the preview. Capacity is 56 and the poverty line is 7. We test all equal tenures, a tie only between the two shortest-tenured members, and a unique least-tenured member. Two rules printed in Rehm v2 Appendix I serve as controls. The index rule, \textnormal{emergency\_cull\_rule}, keeps the first three roster entries at stock 21 and removes the last two. Only 12 of 120 orders put the original pair in the last two positions, so 108 change the outcome. The name-priority rule, \textnormal{right\_size\_fleet}, keeps the first four active members in name order at stock 28 with zero treasury. We do not infer what voters were told about those two rules, or assume they were enacted.
+
+Table~\ref{tab:checks} shows that changing roster order at preview time detects the dependence in the named case but misses it in the deferred case. For the named cutoff-pair fixture, C, D, and E leave under every order. Exactly one of A and B joins them. Declared positional priority would make the index control's order dependence expected. Conversely, a name-based priority can be roster-invariant while still treating identities differently. The audit reports the dependence; judging whether it violates a policy requires the policy's stated criteria.
+
+\section{Can the crisis start while all five are still tied?}
+We construct a trace under the published stock equation \citep[Eq.~1 and Appendix~A.1]{rehm2026} rather than only setting the stock by hand. Let $S_t$ denote pre-harvest stock, $C_{t+1}$ next-round capacity, and $h_{it}$ agent $i$'s catch. In the restricted case of nonnegative remaining stock,
+\[
+S_{t+1}=\min\bigl(C_{t+1},\,2(S_t-\textstyle\sum_i h_{it})\bigr).
+\]
+We use the G3-compatible capacity path $100,85,70,56,56,56$. With five members harvesting seven each round and no transfers or other membership updates, pre-harvest stock follows
+\[
+100\;\longrightarrow\;85\;\longrightarrow\;70\;\longrightarrow\;56\;\longrightarrow\;42\;\longrightarrow\;14.
+\]
+At 42 neither rule removes a member. At 14 both rules activate before the next harvest in the replay. We assume a common tenure counter for agents continuously active since initialization, so the five agents are tied. We could not verify this tenure assumption in the full sandbox. Rehm describes previously enacted rules as re-executing at the start of later rounds (Appendix B). We test the published functions on these start-of-round inputs. The witness does not reconstruct a vote-time snapshot.
+
+To check whether the witness depends on a single catch profile, we hold the prefix fixed and enumerate each member's last catch in $\{7,8\}$, assuming a cap of at least eight and zero taxes or transfers. Each of the $2^5=32$ profiles is feasible at stock 42 and meets all five subsistence requirements. The profiles produce six distinct next-round stocks from 4 to 14. At each, both triggers activate: the deferred rule removes one and the named rule removes four. For both rules all profiles give five different removal sets across roster orders, with 96 orders differing from the original. These profiles share a constructed prefix and collapse to six stock values; they are not independent historical runs. The witness ends before the next harvest.
+
+If the deferred rule directly caused the reported one-person removal, all five members must have been active immediately before it ran. The G3 limit is at least four, and the roster has at most five members. If all five had also been continuously active and their tenure counters started together and advanced at the same rate, their tenures would have tied and roster order would have determined who was removed.
+
+\section{What to report before activating an update}
+For stable sorting followed by a fixed-size prefix or suffix removal, let $F$ be the members strictly on the removal side, $T$ the tied class split by the cutoff, and $k$ the number removed from $T$. The possible removal family is
+\[
+\{F\cup U:\ U\subseteq T,\ |U|=k\}.
+\]
+Members within $T$ can occupy either side of the cutoff depending on their list order. Swapping one removed and one retained member from the class is enough to demonstrate the effect. A reviewer can see the always-removed set, the tied class, how many members are removed from it, and a concrete pair of executions. These are conditional on the chosen snapshot; they do not assert that an unobserved future execution will use that state. We chose activating states using the printed guards and the stock equation. General state discovery and reachability are unresolved, as is deciding which inputs a policy legitimately treats as meaningful. Exhaustive enumeration costs $n!$ executions for $n$ agents; a single swap is only a witness and does not certify the complete set of possible outcomes. Running arbitrary generated code also requires isolation and resource limits. Our local harness executes only the two transcribed functions, not untrusted proposals.
+
+Uniformly averaging roster permutations makes both all-tied tenure rules produce the same marginal distribution as a uniform lottery of the corresponding size. At a fixed roster each tenure rule still removes a single set with probability one. For the true lottery, all five sets remain possible at that fixed roster. An audit that varies roster order and pools the outcomes could therefore incorrectly certify a lottery.
+
+\section{Scope}
+This witness assumes no prior membership changes, shared tenure accounting, no competing rules or resource transfers, and a catch cap of at least eight. It isolates two functions under the stock equation and does not establish reachability in the full sandbox, which was unavailable. It omits votes and concurrent rules. The historical roster order and tenure values are unavailable. Verifying the historical tie and its effect requires those inputs and a replay that matches the recorded removal.
+
+\section{AI assistance}
+ChatGPT was used to draft and revise the manuscript, develop analysis code, and assist with source discovery. The authors are responsible for verifying all claims and outputs.
+
+\begin{thebibliography}{}
+\bibitem[Chen et~al.(2018)]{chen2018}
+Chen, T.~Y.; Kuo, F.-C.; Liu, H.; Poon, P.-L.; Towey, D.; Tse, T.~H.; and Zhou, Z.~Q. 2018.
+Metamorphic Testing: A Review of Challenges and Opportunities.
+\textit{ACM Computing Surveys}, 51(1): 4:1--4:27.
+
+\bibitem[Rehm(2026)]{rehm2026}
+Rehm, G.~B. 2026.
+Can Agents Adapt Their Institutions And Sacrifice Themselves During Collapse? Executable Self-Governance in a GovSim Commons.
+\textit{arXiv:2609.22600v2}.
+
+\bibitem[Ye et~al.(2026)]{ye2026}
+Ye, J.; Cao, L.; Chen, D.; and Ferrara, E. 2026.
+The Butterfly Effect in LLM Social Simulations: From Architecture Sensitivity to Robustness Audits.
+\textit{arXiv:2610.28981}.
+\end{thebibliography}
+
+\appendix
+\section{Replay specification}
+The stock triggers at capacity 56 are $s<33.6$ for the deferred rule and $s<28$ for the named rule. At the $s=28$ deferred trigger, its population limit is four. At the $s=21$ named fixture its limit is one. With constant roster A through E, tenure vectors are $(4,4,4,4,4)$, $(4,4,5,6,7)$ for a pair crossing the cutoff, and $(3,4,4,4,4)$ for a single least-tenured member. Mixed-tenure fixtures are diagnostic, with reachability unverified. The explicit-index control uses stock 21 and the name priority control uses stock 28 with zero treasury. Each lottery has five eligible members and removes one or four uniformly. The accompanying reproducibility archive contains the transcribed rules, inputs, per-order distributions, and stock trace.
+
+\paragraph{Counting changed orders.}
+In the all-tied fixtures, each member appears first in $4!=24$ of the 120 roster orders. The deferred rule removes that first member, while the named rule retains that member and removes the other four. In either case, 24 orders reproduce the original removal set and 96 change it. In the cutoff-pair fixtures, A precedes B in exactly half the orders. Reversing that relative order changes the outcome, so 60 orders differ from the original.
+
+\paragraph{Final harvest sensitivity.}
+If $m$ of the five members take eight units at stock 42 and the rest take seven, total catch is $35+m$. The next stock is $14-2m$, since the capacity of 56 does not bind. For $m=0,\ldots,5$, the respective numbers of catch profiles are $1,5,10,10,5,1$. The sweep weights each profile once and checks the roster effect separately at each resulting stock.
+\end{document}

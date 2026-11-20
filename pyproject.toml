@@ -1,0 +1,10 @@
+[project]
+name = "govsim-roster-audit"
+version = "1.0.0"
+description = "Exact roster-order audit of published GovSim-SelfGovern rules"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false

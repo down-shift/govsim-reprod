@@ -1,0 +1,6 @@
+{
+  "python": "3.12.14",
+  "implementation": "CPython",
+  "platform": "linux",
+  "architecture": "x86_64"
+}
