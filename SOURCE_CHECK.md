@@ -1,7 +1,7 @@
 # Supplement and source verification
 
-This is an anonymous reproducibility package. The inputs and reachability witness are constructed, not historical observations. The rule implementations are transcriptions attributed to arXiv:2609.22600v2, Appendices I.1 and D.5. The versioned PDF could not be reopened during the final revision. Independently compare both transcriptions and Appendix B's execution and validation semantics with that PDF before submission. The current test suite checks the transcribed functions and harness; it does not independently establish their correspondence to the source or runtime.
+This is an anonymous reproducibility package. The inputs and reachability witness are constructed, not historical observations. The executable statements of both audited rules and both controls were compared against the listings in arXiv:2609.22600v2, Appendices I.1, D.5, and I. No differences in the printed executable statements were found. The comparison uses the PDF text extraction; it does not verify the original runtime, historical state, or tenure updates. Appendix B's full execution and validation semantics have not been independently checked against the runtime.
 
-The submission-facing paper should be built with the unmodified AAAI 2027 author kit and its required fonts. The separate preview PDF was compiled with a font substitution and is not a final template-compliance check.
+The manuscript was built with the supplied AAAI 2027 style and its required fonts.
 
 See README.md for reproduction commands, exact outputs, and limitations.

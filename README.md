@@ -1,6 +1,6 @@
 # GovSim rule preview audit
 
-This bundle contains the Trust4RSI-Agent working draft, the standalone Python audit, and exact run outputs. The manuscript prose was drafted with ChatGPT and is provided as a working draft for author rewriting and disclosure under applicable venue policy.
+This repository contains the manuscript, standalone Python audit, and exact run outputs. The supplementary archive contains the audit code and results. The manuscript discloses the use of ChatGPT.
 
 ## Reproduce the experiments
 
@@ -19,4 +19,4 @@ The pinned source is Rehm, arXiv:2609.22600v2, 7 October 2026. The two enacted r
 
 For a historical snapshot, adapt `examples/deferred_tie.json` and use `uv run --locked python -m govsim_audit replay SNAPSHOT.json`. The example itself is constructed.
 
-Build the working draft with `latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex` on a complete TeX Live installation with the AAAI-27 kit dependencies.
+Build the manuscript with `latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex` on a complete TeX Live installation with the AAAI-27 kit dependencies. The supplementary archive does not include the manuscript source or template.
